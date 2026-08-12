@@ -1,7 +1,10 @@
 package com.example.fitness_backend.entity;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -9,6 +12,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 
 @Entity
 @Table(name = "workouts")
@@ -17,26 +22,33 @@ public class Workout {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String type; // e.g., Running, Cycling
+    @NotBlank(message = "Title is required")
+    @Column(nullable = false, length = 100)
+    private String title;
+
+    @Column(nullable = false)
+    private LocalDate date;
+
+    @Min(value = 0, message = "Duration cannot be negative")
+    @Column(nullable = false)
     private int duration; // minutes
+
+    @Min(value = 0, message = "Calories cannot be negative")
+    @Column(nullable = false)
     private int calories;
 
-    private LocalDateTime createdAt = LocalDateTime.now();
+    @Column(nullable = false)
+    private String intensity; // low / moderate / high
+
+    @Column(columnDefinition = "TEXT")
+    private String notes;
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnore
     private User user;
 
     public Workout() {
-    }
-
-    public Workout(Long id, String type, int duration, int calories, LocalDateTime createdAt, User user) {
-        this.id = id;
-        this.type = type;
-        this.duration = duration;
-        this.calories = calories;
-        this.createdAt = createdAt;
-        this.user = user;
     }
 
     public Long getId() {
@@ -47,12 +59,20 @@ public class Workout {
         this.id = id;
     }
 
-    public String getType() {
-        return type;
+    public String getTitle() {
+        return title;
     }
 
-    public void setType(String type) {
-        this.type = type;
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public LocalDate getDate() {
+        return date;
+    }
+
+    public void setDate(LocalDate date) {
+        this.date = date;
     }
 
     public int getDuration() {
@@ -71,12 +91,20 @@ public class Workout {
         this.calories = calories;
     }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
+    public String getIntensity() {
+        return intensity;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
+    public void setIntensity(String intensity) {
+        this.intensity = intensity;
+    }
+
+    public String getNotes() {
+        return notes;
+    }
+
+    public void setNotes(String notes) {
+        this.notes = notes;
     }
 
     public User getUser() {
@@ -85,17 +113,5 @@ public class Workout {
 
     public void setUser(User user) {
         this.user = user;
-    }
-
-    @Override
-    public String toString() {
-        return "Workout{" +
-                "id=" + id +
-                ", type='" + type + '\'' +
-                ", duration=" + duration +
-                ", calories=" + calories +
-                ", createdAt=" + createdAt +
-                ", user=" + user +
-                '}';
     }
 }

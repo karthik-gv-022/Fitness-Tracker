@@ -1,45 +1,50 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import { register } from "../services/api";
 
 const Signup = () => {
   const [form, setForm] = useState({ username: "", password: "", confirm: "" });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Handle input change
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // Handle signup submit
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
 
     if (!form.username || !form.password || !form.confirm) {
-      alert("All fields are required!");
+      setError("All fields are required!");
       return;
     }
-
+    if (form.password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
     if (form.password !== form.confirm) {
-      alert("Passwords do not match!");
+      setError("Passwords do not match!");
       return;
     }
 
-    // Fetch users from localStorage
-    const users = JSON.parse(localStorage.getItem("users")) || [];
-
-    // Check if username exists
-    const exists = users.find((u) => u.username === form.username);
-    if (exists) {
-      alert("Username already exists!");
-      return;
+    setLoading(true);
+    try {
+      const res = await register({ username: form.username, password: form.password });
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("userId", String(res.data.userId));
+      localStorage.setItem("username", res.data.username);
+      navigate("/dashboard");
+    } catch (err) {
+      if (err.response && err.response.status === 409) {
+        setError("Username already exists.");
+      } else {
+        setError("Could not reach the server. Is the backend running?");
+      }
+    } finally {
+      setLoading(false);
     }
-
-    // Save new user
-    users.push({ username: form.username, password: form.password });
-    localStorage.setItem("users", JSON.stringify(users));
-
-    alert("Signup successful! Please login.");
-    navigate("/"); // redirect to login page
   };
 
   return (
@@ -69,7 +74,7 @@ const Signup = () => {
             <input
               type="password"
               name="password"
-              placeholder="Password"
+              placeholder="Password (min 6 characters)"
               value={form.password}
               onChange={handleChange}
               className="w-full mb-4 p-3 rounded-lg bg-[#2c2855] text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500"
@@ -85,24 +90,24 @@ const Signup = () => {
               className="w-full mb-4 p-3 rounded-lg bg-[#2c2855] text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500"
             />
 
+            {error && <p className="text-red-400 mb-4 text-sm">{error}</p>}
+
             {/* Signup Button */}
             <button
               type="submit"
-              className="w-full py-3 rounded-lg bg-gradient-to-r from-green-500 to-blue-600 text-white font-semibold hover:opacity-90 transition"
+              disabled={loading}
+              className="w-full py-3 rounded-lg bg-gradient-to-r from-green-500 to-blue-600 text-white font-semibold hover:opacity-90 transition disabled:opacity-50"
             >
-              Sign Up
+              {loading ? "Creating account..." : "Sign Up"}
             </button>
           </form>
 
           {/* Link to Login */}
           <div className="text-center mt-4 text-gray-400">
             Already have an account?{" "}
-            <button
-              onClick={() => navigate("/")}
-              className="text-blue-400 hover:text-white"
-            >
+            <Link to="/login" className="text-blue-400 hover:text-white">
               Login
-            </button>
+            </Link>
           </div>
         </div>
       </div>

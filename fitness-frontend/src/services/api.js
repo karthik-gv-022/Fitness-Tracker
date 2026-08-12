@@ -1,13 +1,28 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:8080/api/users"; // adjust if needed
+const API_URL = "http://localhost:8080/api";
 
-// Get all users
-export const getUsers = () => axios.get(API_URL);
+const api = axios.create({ baseURL: API_URL });
 
-// Create/Register a new user
-export const createUser = (userData) => axios.post(API_URL, userData);
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 
-// Login user (backend must expose /login endpoint)
-export const loginUser = (credentials) =>
-  axios.post("http://localhost:8080/api/auth/login", credentials);
+export const register = (credentials) => api.post("/auth/register", credentials);
+export const login = (credentials) => api.post("/auth/login", credentials);
+export const me = () => api.get("/auth/me");
+export const logout = () => api.post("/auth/logout");
+
+export const getWorkouts = () => api.get("/workouts");
+export const logWorkout = (workout) => api.post("/workouts", workout);
+export const updateWorkout = (id, workout) => api.put(`/workouts/${id}`, workout);
+export const deleteWorkout = (id) => api.delete(`/workouts/${id}`);
+
+export const getGoal = () => api.get("/goals");
+export const setGoal = (weeklyGoal) => api.put("/goals", { weeklyGoal });
+
+export default api;

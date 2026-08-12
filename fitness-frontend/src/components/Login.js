@@ -1,58 +1,37 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-
-const tourSteps = [
-  {
-    title: "Welcome to Fitness Tracker",
-    description: "Monitor your daily activities and take control of your health.",
-  },
-  {
-    title: "Track Your Steps",
-    description: "Record your daily steps to stay active and motivated.",
-  },
-  {
-    title: "Monitor Calories",
-    description: "Keep an eye on your calorie intake and manage your diet.",
-  },
-  {
-    title: "Sleep & Recovery",
-    description: "Analyze your sleep patterns for better rest and recovery.",
-  },
-];
+import { login } from "../services/api";
 
 const Login = () => {
   const [form, setForm] = useState({ username: "", password: "" });
-  const [tourIndex, setTourIndex] = useState(-1); // -1 means tour is hidden
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (form.username === "user" && form.password === "12345") {
-      localStorage.setItem("token", "demo-token");
+    setError("");
+    setLoading(true);
+    try {
+      const res = await login(form);
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("userId", String(res.data.userId));
+      localStorage.setItem("username", res.data.username);
       navigate("/dashboard");
-    } else {
-      const storedUsers = JSON.parse(localStorage.getItem("users")) || [];
-      const userExists = storedUsers.find(
-        (user) => user.username === form.username && user.password === form.password
-      );
-
-      if (userExists) {
-        localStorage.setItem("token", "demo-token");
-        navigate("/dashboard");
+    } catch (err) {
+      if (err.response && err.response.status === 401) {
+        setError("Invalid username or password.");
       } else {
-        alert("Invalid username or password! Try user / 12345");
+        setError("Could not reach the server. Is the backend running?");
       }
+    } finally {
+      setLoading(false);
     }
   };
-
-  const startTour = () => setTourIndex(0);
-  const nextStep = () => setTourIndex((prev) => Math.min(prev + 1, tourSteps.length - 1));
-  const prevStep = () => setTourIndex((prev) => Math.max(prev - 1, 0));
-  const finishTour = () => setTourIndex(-1);
 
   return (
     <div className="flex h-screen">
@@ -82,20 +61,15 @@ const Login = () => {
               onChange={handleChange}
               className="w-full mb-4 p-3 rounded-lg bg-[#2c2855] text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500"
             />
+            {error && <p className="text-red-400 mb-4 text-sm">{error}</p>}
             <button
               type="submit"
-              className="w-full py-3 rounded-lg bg-gradient-to-r from-pink-500 to-purple-600 text-white font-semibold hover:opacity-90 transition"
+              disabled={loading}
+              className="w-full py-3 rounded-lg bg-gradient-to-r from-pink-500 to-purple-600 text-white font-semibold hover:opacity-90 transition disabled:opacity-50"
             >
-              Login
+              {loading ? "Logging in..." : "Login"}
             </button>
           </form>
-
-          <div className="flex justify-between text-sm text-gray-400 mt-3">
-            <label>
-              <input type="checkbox" className="mr-2" /> Remember me
-            </label>
-            <button className="hover:text-white">Forgot password?</button>
-          </div>
 
           <p className="mt-6 text-center text-gray-400">
             Don’t have an account?{" "}
@@ -109,55 +83,10 @@ const Login = () => {
         </div>
       </div>
 
-      {/* Right Section - Welcome Text + Tour */}
+      {/* Right Section - Welcome Text */}
       <div className="w-1/2 flex flex-col items-center justify-center bg-gradient-to-r from-purple-800 via-indigo-800 to-blue-900 relative">
         <h1 className="text-5xl font-bold text-white mb-6">Welcome.</h1>
-
-        {/* Get Started Button */}
-        {tourIndex === -1 && (
-          <button
-            onClick={startTour}
-            className="py-3 px-6 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-semibold rounded-lg hover:opacity-90 transition"
-          >
-            Get Started
-          </button>
-        )}
-
-        {/* Guided Mini Tour Panel */}
-        {tourIndex !== -1 && (
-          <div className="bg-white rounded-xl p-6 shadow-lg max-w-md text-center animate-slide-up">
-            <h2 className="text-2xl font-bold mb-4">{tourSteps[tourIndex].title}</h2>
-            <p className="mb-6 text-gray-700">{tourSteps[tourIndex].description}</p>
-            <div className="flex justify-between">
-              <button
-                onClick={prevStep}
-                disabled={tourIndex === 0}
-                className={`py-2 px-4 rounded-lg ${
-                  tourIndex === 0
-                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    : "bg-purple-600 text-white hover:opacity-90 transition"
-                }`}
-              >
-                Previous
-              </button>
-              {tourIndex === tourSteps.length - 1 ? (
-                <button
-                  onClick={finishTour}
-                  className="py-2 px-4 bg-pink-500 text-white rounded-lg hover:opacity-90 transition"
-                >
-                  Finish
-                </button>
-              ) : (
-                <button
-                  onClick={nextStep}
-                  className="py-2 px-4 bg-purple-600 text-white rounded-lg hover:opacity-90 transition"
-                >
-                  Next
-                </button>
-              )}
-            </div>
-          </div>
-        )}
+        <p className="text-purple-200 text-xl">Track your workouts. Stay consistent.</p>
       </div>
     </div>
   );

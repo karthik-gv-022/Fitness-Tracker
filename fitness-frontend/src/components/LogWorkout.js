@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { logWorkout } from "../services/api";
 
 const LogWorkout = () => {
   const navigate = useNavigate();
@@ -14,6 +15,8 @@ const LogWorkout = () => {
     notes: "",
     date: new Date().toISOString().split("T")[0],
   });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   // Load quick start workout if passed from Dashboard
   useEffect(() => {
@@ -50,30 +53,36 @@ const LogWorkout = () => {
     }
   }, [location.state]);
 
-  // Handle input changes
   const handleChange = (e) => {
     setWorkout({ ...workout, [e.target.name]: e.target.value });
   };
 
-  // Handle form submit
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
 
     if (!workout.title || !workout.duration || !workout.calories) {
-      alert("Please fill in all required fields!");
+      setError("Please fill in all required fields!");
       return;
     }
 
-    const savedWorkouts = JSON.parse(localStorage.getItem("workouts")) || [];
-    savedWorkouts.push({
-      ...workout,
-      duration: Number(workout.duration),
-      calories: Number(workout.calories),
-    });
-    localStorage.setItem("workouts", JSON.stringify(savedWorkouts));
-
-    alert("Workout logged successfully!");
-    navigate("/dashboard");
+    setLoading(true);
+    try {
+      await logWorkout({
+        ...workout,
+        duration: Number(workout.duration),
+        calories: Number(workout.calories),
+      });
+      navigate("/dashboard");
+    } catch (err) {
+      if (err.response && err.response.status === 400) {
+        setError("Invalid workout. Check the values.");
+      } else {
+        setError("Could not save the workout. Is the backend running?");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -84,8 +93,9 @@ const LogWorkout = () => {
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Title */}
           <div>
-            <label className="block text-sm font-semibold mb-1">Workout Title</label>
+            <label className="block text-sm font-semibold mb-1" htmlFor="title">Workout Title</label>
             <input
+              id="title"
               type="text"
               name="title"
               value={workout.title}
@@ -98,8 +108,9 @@ const LogWorkout = () => {
 
           {/* Duration */}
           <div>
-            <label className="block text-sm font-semibold mb-1">Duration (minutes)</label>
+            <label className="block text-sm font-semibold mb-1" htmlFor="duration">Duration (minutes)</label>
             <input
+              id="duration"
               type="number"
               name="duration"
               value={workout.duration}
@@ -111,8 +122,9 @@ const LogWorkout = () => {
 
           {/* Calories */}
           <div>
-            <label className="block text-sm font-semibold mb-1">Calories Burned</label>
+            <label className="block text-sm font-semibold mb-1" htmlFor="calories">Calories Burned</label>
             <input
+              id="calories"
               type="number"
               name="calories"
               value={workout.calories}
@@ -124,8 +136,9 @@ const LogWorkout = () => {
 
           {/* Intensity */}
           <div>
-            <label className="block text-sm font-semibold mb-1">Intensity</label>
+            <label className="block text-sm font-semibold mb-1" htmlFor="intensity">Intensity</label>
             <select
+              id="intensity"
               name="intensity"
               value={workout.intensity}
               onChange={handleChange}
@@ -139,8 +152,9 @@ const LogWorkout = () => {
 
           {/* Notes */}
           <div>
-            <label className="block text-sm font-semibold mb-1">Notes</label>
+            <label className="block text-sm font-semibold mb-1" htmlFor="notes">Notes</label>
             <textarea
+              id="notes"
               name="notes"
               value={workout.notes}
               onChange={handleChange}
@@ -151,8 +165,9 @@ const LogWorkout = () => {
 
           {/* Date */}
           <div>
-            <label className="block text-sm font-semibold mb-1">Date</label>
+            <label className="block text-sm font-semibold mb-1" htmlFor="date">Date</label>
             <input
+              id="date"
               type="date"
               name="date"
               value={workout.date}
@@ -162,13 +177,16 @@ const LogWorkout = () => {
             />
           </div>
 
+          {error && <p className="text-red-500 text-sm">{error}</p>}
+
           {/* Buttons */}
           <div className="flex justify-between mt-4">
             <button
               type="submit"
-              className="px-6 py-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-lg"
+              disabled={loading}
+              className="px-6 py-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-lg disabled:opacity-50"
             >
-              Save Workout
+              {loading ? "Saving..." : "Save Workout"}
             </button>
             <button
               type="button"

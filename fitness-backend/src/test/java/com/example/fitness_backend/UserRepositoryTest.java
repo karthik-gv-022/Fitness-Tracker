@@ -3,7 +3,6 @@ package com.example.fitness_backend;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -12,7 +11,6 @@ import org.springframework.test.context.TestPropertySource;
 import com.example.fitness_backend.entity.User;
 import com.example.fitness_backend.repository.UserRepository;
 
-@Disabled("Temporarily disabled until database setup is ready")
 @DataJpaTest
 @TestPropertySource(locations = "classpath:application-test.properties")
 class UserRepositoryTest {

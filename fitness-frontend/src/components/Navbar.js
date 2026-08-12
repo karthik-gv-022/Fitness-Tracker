@@ -15,9 +15,6 @@ const Navbar = () => {
         <Link to="/dashboard" className="mr-4 hover:underline">
           Dashboard
         </Link>
-        <Link to="/activities" className="hover:underline">
-          Activities
-        </Link>
       </div>
       <button
         onClick={handleLogout}
